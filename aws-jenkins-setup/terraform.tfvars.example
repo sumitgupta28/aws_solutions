@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars and adjust as needed. All values are optional.
+
+aws_region    = "us-east-1"
+project_name  = "jenkins"
+instance_type = "t2.micro" # or t3.micro — both Free Tier eligible
+
+# Root volume in GiB (<= 30 to stay within the EBS Free Tier).
+root_volume_size = 10
+
+# Restrict SSH/UI access. Leave commented to auto-detect your current public IP.
+# allowed_cidr = "203.0.113.10/32"
+#
+# Or open the UI + SSH to the whole internet (convenient, but least secure):
+# allowed_cidr = "0.0.0.0/0"
+
+tags = {
+  Owner       = "your-name"
+  Environment = "dev"
+}
