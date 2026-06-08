@@ -13,7 +13,7 @@ variable "project_name" {
 variable "instance_type" {
   description = "EC2 instance type. t2.micro and t3.micro are AWS Free Tier eligible (750 hrs/month for 12 months)."
   type        = string
-  default     = "t2.micro"
+  default     = "t3.micro"
 
   validation {
     condition     = contains(["t2.micro", "t3.micro"], var.instance_type)
