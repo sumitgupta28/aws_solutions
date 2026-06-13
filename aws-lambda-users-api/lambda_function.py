@@ -4,10 +4,6 @@ import boto3
 import uuid
 from datetime import datetime, timezone
 
-from pydantic import ValidationError
-
-from models import CreateUserRequest, UpdateUserRequest
-
 # Logger — integrates with CloudWatch. Level is configurable via the
 # LOG_LEVEL env var (defaults to INFO) without a code change.
 import os
@@ -61,17 +57,16 @@ def handle_create(event):
         logger.warning("Create rejected: invalid body")
         return _response(400, body)
 
-    try:
-        data = CreateUserRequest(**body)
-    except ValidationError as exc:
-        logger.warning("Create rejected: validation failed")
-        return _validation_error_response(exc)
+    missing = [f for f in ["name", "email"] if not body.get(f)]
+    if missing:
+        logger.warning("Create rejected: missing fields=%s", missing)
+        return _response(400, {"error": f"Missing required fields: {', '.join(missing)}"})
 
     user = {
         "userId":    str(uuid.uuid4()),
-        "name":      data.name,
-        "email":     data.email,
-        "phone":     data.phone or "",
+        "name":      body["name"].strip(),
+        "email":     body["email"].strip().lower(),
+        "phone":     body.get("phone", "").strip(),
         "createdAt": _now(),
         "updatedAt": _now(),
     }
@@ -124,16 +119,11 @@ def handle_update(event):
         logger.warning("Update rejected: invalid body, userId=%s", user_id)
         return _response(400, body)
 
-    try:
-        data = UpdateUserRequest(**body)
-    except ValidationError as exc:
-        logger.warning("Update rejected: validation failed, userId=%s", user_id)
-        return _validation_error_response(exc)
-
-    updates = data.model_dump(exclude_unset=True)
+    allowed = {"name", "email", "phone"}
+    updates = {k: v for k, v in body.items() if k in allowed and v}
     if not updates:
         logger.warning("Update rejected: no valid fields, userId=%s", user_id)
-        return _response(400, {"error": "Provide at least one field to update: name, email, phone"})
+        return _response(400, {"error": f"Provide at least one field to update: {', '.join(allowed)}"})
 
     # Build DynamoDB update expression dynamically
     expr_parts = []
@@ -144,7 +134,7 @@ def handle_update(event):
         placeholder = f":val_{key}"
         name_token  = f"#attr_{key}"
         expr_parts.append(f"{name_token} = {placeholder}")
-        expr_values[placeholder] = value  # already normalized by UpdateUserRequest
+        expr_values[placeholder] = value.strip().lower() if key == "email" else value.strip()
         expr_names[name_token]   = key
 
     expr_parts.append("#attr_updatedAt = :updatedAt")
@@ -198,15 +188,6 @@ def handle_delete(event):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _validation_error_response(exc):
-    """Convert a Pydantic ValidationError into a standard 400 response."""
-    details = [
-        {"field": ".".join(str(p) for p in e["loc"]), "message": e["msg"]}
-        for e in exc.errors()
-    ]
-    return _response(400, {"error": "Validation failed", "details": details})
-
 
 def _parse_body(event):
     """Parse the JSON request body. Returns a dict or an error dict."""

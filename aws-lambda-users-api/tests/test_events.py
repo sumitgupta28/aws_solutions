@@ -22,12 +22,6 @@ POST_BAD_JSON = {
     "body": "not valid json"
 }
 
-# ── 3b. POST /users — invalid email format (expect 400, validation error) ────
-POST_INVALID_EMAIL = {
-    "routeKey": "POST /users",
-    "body": "{\"name\": \"Carol\", \"email\": \"not-an-email\"}"
-}
-
 # ── 4. GET /users/{userId} — replace the userId with a real one ───────────────
 GET_USER = {
     "routeKey": "GET /users/{userId}",

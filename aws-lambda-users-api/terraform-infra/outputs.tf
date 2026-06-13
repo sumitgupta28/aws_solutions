@@ -7,10 +7,6 @@ output "lambda_function_name" {
   value = aws_lambda_function.users_api.function_name
 }
 
-output "lambda_layer_arn" {
-  value = aws_lambda_layer_version.pydantic.arn
-}
-
 output "dynamodb_table_name" {
   value = aws_dynamodb_table.users.name
 }

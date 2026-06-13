@@ -6,39 +6,25 @@ Terraform that provisions and deploys the **aws-lambda-users-api** serverless st
 | --- | --- |
 | `aws_dynamodb_table.users` | `users` table, PK `userId` (String), on-demand billing, PITR on |
 | `aws_lambda_function.users_api` | Python handler (`lambda_function.lambda_handler`) |
-| `aws_lambda_layer_version.pydantic` | `pydantic` + `email-validator` layer (pre-built) |
 | `aws_iam_role.lambda` (+ policies) | Least-privilege: DynamoDB CRUD on the table + CloudWatch Logs |
 | `aws_apigatewayv2_*` | HTTP API with the 4 user routes, open (no auth) |
 | `aws_cloudwatch_log_group.*` | Function + API access logs with retention |
 
 The function zip is packaged by Terraform (`archive_file`) from `../lambda_function.py`
-and `../models.py` — it rebuilds automatically when either file changes.
+— it rebuilds automatically when the file changes.
 
 ## Prerequisites
 
 1. **AWS credentials** in the environment (`aws sts get-caller-identity` works).
-2. **The Pydantic layer zip, built for Amazon Linux.** Terraform does *not* build
-   it (it bundles compiled Rust that must match the Lambda runtime). Build it once
-   per [`../DEPLOY.md`](../DEPLOY.md) step 1:
 
-   ```bash
-   cd ..
-   mkdir -p layer/python
-   docker run --rm --entrypoint /bin/sh \
-     -v "$PWD":/var/task public.ecr.aws/lambda/python:3.12 \
-     -c "pip install -r /var/task/requirements.txt -t /var/task/layer/python"
-   (cd layer && zip -r ../pydantic-layer.zip python)
-   ```
-
-   This produces `../pydantic-layer.zip`. Rebuild it (and re-apply) whenever
-   `requirements.txt` changes. Keep `lambda_runtime` here in sync with the
-   `python:3.x` image you build against.
+The function has no third-party dependencies — validation is hand-rolled in
+`lambda_function.py`, so there is no Lambda layer to build.
 
 ## Usage
 
 ```bash
 cd terraform-infra
-cp terraform.tfvars.example terraform.tfvars   # set layer_zip_path
+cp terraform.tfvars.example terraform.tfvars   # optional — all vars have defaults
 terraform init
 terraform plan
 terraform apply
@@ -63,10 +49,9 @@ curl -sX DELETE "$API/users/<userId>"
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `layer_zip_path` | *(required)* | Path to the pre-built layer zip |
 | `aws_region` | `us-east-1` | |
 | `project_name` | `users-api` | Name prefix for all resources |
-| `lambda_runtime` | `python3.12` | Must match the layer build image |
+| `lambda_runtime` | `python3.12` | |
 | `lambda_memory_mb` | `256` | |
 | `lambda_timeout_seconds` | `15` | |
 | `log_level` | `INFO` | Function `LOG_LEVEL` env var |

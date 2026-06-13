@@ -11,7 +11,7 @@ variable "project_name" {
 }
 
 variable "lambda_runtime" {
-  description = "Lambda Python runtime. Must match the runtime the Pydantic layer was built for."
+  description = "Lambda Python runtime."
   type        = string
   default     = "python3.12"
 }
@@ -44,9 +44,4 @@ variable "dynamodb_table_name" {
   description = "Name of the DynamoDB users table. The application code hard-codes \"users\", so changing this requires a matching code change."
   type        = string
   default     = "users"
-}
-
-variable "layer_zip_path" {
-  description = "Path to the pre-built Pydantic Lambda layer zip (built for Amazon Linux per DEPLOY.md, e.g. ../pydantic-layer.zip)."
-  type        = string
 }
