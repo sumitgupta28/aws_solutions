@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and adjust. Only layer_zip_path is required.
+
+# Path to the pre-built Pydantic layer zip (see ../DEPLOY.md step 1).
+layer_zip_path = "../pydantic-layer.zip"
+
+# Optional overrides (defaults shown):
+# aws_region   = "us-east-1"
+# project_name = "users-api"
+# log_level    = "INFO"
